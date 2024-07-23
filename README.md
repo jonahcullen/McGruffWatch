@@ -3,7 +3,7 @@
 *Taking a bite out of processing time with McGruff: Fast and Accurate Allelic Variation Analysis*
 
 <p align="center">
-  <img src="assets/mcgruff.png" alt="McGruff the Crime Dog looking at a computer">
+  <img src="assets/mcgruff.png" width="400" alt="McGruff the Crime Dog looking at a computer">
 </p>
 
 <p align="center">
