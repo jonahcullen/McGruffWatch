@@ -4,9 +4,11 @@ import pandas as pd
 singularity: '/panfs/jay/groups/0/fried255/shared/gatk4_workflow/rescuer/AFREQ/CalcFix/afreq.sif'
 
 # MAKE THIS A PART OF THE AF CONTAINER - NO NEED TO REGEN EVERYTIME
+# read in the dog.regions.txt file as a table using pandas, and a regions variable that's a list of those chrom values
 chrmsDF = pd.read_table("dog.regions.txt")
 regions = list(chrmsDF['chrom'])
 
+# I DON'T KNOW WHAT THIS DOES :(
 rule all:
     input:
        #expand(
@@ -18,6 +20,7 @@ rule all:
         "af_analysis.no_intergenic.csv"  
 
 # ADD MORE STRUCTURE TO DIRS LIKE split/{region}/{region}.vcf.gz
+# takes in a vcf file and outputs a processed vcf file using the options provided and bcftools
 rule select_variants_chrom:
     input:
         vcf = "/panfs/jay/groups/0/fried255/fried255/working/pipeline/UU_Cfam_GSD_1.0_ROSY/20230809/joint_call.UU_Cfam_GSD_1.0_ROSY.20230809.vep.vcf.gz" 
@@ -63,6 +66,7 @@ rule process_variants:
                 {input[3]} > {output.table}
         '''
 
+# takes a pre-set header string, and generates a new text file with it at the top, then concatenates the input to the end of that file (seems there are multiple inputs so it knows to do this repeatedly?)
 rule concat_files:
     input:
         expand("results/{region}/{region}.csv", region=regions)
@@ -91,6 +95,8 @@ rule concat_files:
             cat {input} >> {output}
         '''
 
+# takes the generated above af_analysis.csv and removes specific areas from it (intergenic ones), and generates a new output without intergenic regions
+# this localrules means this isn't submitted as its own job, and is just run on the host node (I THINK???)
 localrules: remove_intergenic
 rule remove_intergenic:
     input:
@@ -101,4 +107,3 @@ rule remove_intergenic:
         '''
             awk 'NR == 1 || !/intergenic/' {input} > {output}
         '''
-
