@@ -6,6 +6,7 @@ from collections import Counter
 
 import vcf
 
+# ask if this mainCols var needs to be generalized at some point? - H
 def reduceCSQ(csqs):
     #columns: variant,consequence,impact,gene,transcriptID,biotype,exon,hgvsc,hgvsp,cDNA_pos,cds_pos,aa_pos,aas,codons,variant_class,proteinID
     #mainCols = [0, 1, 2, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 21, 30]

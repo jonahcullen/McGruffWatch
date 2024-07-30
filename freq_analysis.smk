@@ -1,6 +1,8 @@
 import re
 import pandas as pd
 
+configfile:"./config.yaml"
+
 singularity: '/panfs/jay/groups/0/fried255/shared/gatk4_workflow/rescuer/AFREQ/CalcFix/afreq.sif'
 
 # MAKE THIS A PART OF THE AF CONTAINER - NO NEED TO REGEN EVERYTIME
@@ -8,9 +10,9 @@ singularity: '/panfs/jay/groups/0/fried255/shared/gatk4_workflow/rescuer/AFREQ/C
 chrmsDF = pd.read_table("dog.regions.txt")
 regions = list(chrmsDF['chrom'])
 
-# I DON'T KNOW WHAT THIS DOES :(
 rule all:
     input:
+       # esoteric commented out block of code that I will never touch because I assume it has some utility
        #expand(
        #   #"results/{region}/{region}.split.vcf.gz",
        #    "results/{region}/{region}.csv",
@@ -20,7 +22,7 @@ rule all:
         "af_analysis.no_intergenic.csv"  
 
 # ADD MORE STRUCTURE TO DIRS LIKE split/{region}/{region}.vcf.gz
-# takes in a vcf file and outputs a processed vcf file using the options provided and bcftools
+# takes in a vcf file and outputs many processed vcf files using the options provided and bcftools
 rule select_variants_chrom:
     input:
         vcf = "/panfs/jay/groups/0/fried255/fried255/working/pipeline/UU_Cfam_GSD_1.0_ROSY/20230809/joint_call.UU_Cfam_GSD_1.0_ROSY.20230809.vep.vcf.gz" 
@@ -42,6 +44,7 @@ rule select_variants_chrom:
                 {input.vcf}
         '''
 
+# change this to be general, and have both a variable amount of inputs and arguments in the shell command
 rule process_variants:
     input:
         "Toy/Steve/Lists/stpd.list",
@@ -67,6 +70,7 @@ rule process_variants:
         '''
 
 # takes a pre-set header string, and generates a new text file with it at the top, then concatenates the input to the end of that file (seems there are multiple inputs so it knows to do this repeatedly?)
+# change this header to be dynamic based on the above lists
 rule concat_files:
     input:
         expand("results/{region}/{region}.csv", region=regions)
@@ -96,7 +100,7 @@ rule concat_files:
         '''
 
 # takes the generated above af_analysis.csv and removes specific areas from it (intergenic ones), and generates a new output without intergenic regions
-# this localrules means this isn't submitted as its own job, and is just run on the host node (I THINK???)
+# this localrules means this isn't submitted as its own job, and is just run on the host node since it's so easy/short (I THINK???)
 localrules: remove_intergenic
 rule remove_intergenic:
     input:
