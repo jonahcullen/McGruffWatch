@@ -1,0 +1,4 @@
+---
+lists_directory: "./lists"
+vcf_path: "/panfs/jay/groups/0/fried255/fried255/working/pipeline/UU_Cfam_GSD_1.0_ROSY/20230809/joint_call.UU_Cfam_GSD_1.0_ROSY.20230809.vep.vcf.gz"
+sif_path: '/panfs/jay/groups/0/fried255/shared/gatk4_workflow/rescuer/AFREQ/CalcFix/afreq.sif'

@@ -8,8 +8,6 @@ import vcf
 
 # ask if this mainCols var needs to be generalized at some point? - H
 def reduceCSQ(csqs):
-    #columns: variant,consequence,impact,gene,transcriptID,biotype,exon,hgvsc,hgvsp,cDNA_pos,cds_pos,aa_pos,aas,codons,variant_class,proteinID
-    #mainCols = [0, 1, 2, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 21, 30]
     mainCols = [0, 1, 2, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 18, 19, 21, 24, 25, 27, 28, 30]
     updated = []
     for record in csqs:
@@ -56,8 +54,12 @@ def calcAF(groupList, minorAlt=True):
 
 #parse dog list  
 dogs = {}
+# make a seperate list to hold group names (I think this is inefficient but I want to KISS here)
+group_names = list()
 for i in sys.argv[2:]:
+    # this line gets the name of the file (or actually, a string of anything before the first . in the final name of the path passed)
     group = os.path.basename(i).split('.')[0]
+    group_names.append(group)
     with open(i) as f:
         for sample in f:
             sample = sample.strip()
@@ -78,31 +80,23 @@ for line in vcfR:
         minor_alt = False
     maf = round(maf, 6)
     first = ','.join(map(str, [chrm, pos, ref, alt, major, minor, maf]))
-   #ctl, risk, aff, main = [], [], [], []
-    main, stpd, pwdg, oodle, ctrl = [], [], [], [], []
+    # make a dictionary to store the groups with the name of the group as the key value
+    groups_dict = {}
+    for group_name in group_names:
+        groups_dict[group_name] = []
+    # still need main list!
+    main = []
     for i in line.samples:
         sample, gt = i.sample, i['GT'].replace('|', '/')
-       #print(sample, gt)
         main.append(gt)
-       #group = dogs.get(sample, None)
-       #group = os.path.basename(dogs[sample]) if dogs[sample] is not None else None
         group = os.path.basename(dogs.get(sample, "")) if dogs.get(sample) is not None else None
-        if group == 'ctrlbrd':
-            ctrl.append(gt)
-        elif group == 'stpd':
-            stpd.append(gt)
-        elif group == 'pwdg':
-            pwdg.append(gt)
-        elif group == 'oodle':
-            oodle.append(gt)
+        groups_dict[group].append(gt)
 
-    countsStpd = ','.join(map(str, calcAF(stpd, minor_alt)))
-    countsPwdg = ','.join(map(str, calcAF(pwdg, minor_alt)))
-    countsOodle = ','.join(map(str, calcAF(oodle, minor_alt)))
-    countsCtl = ','.join(map(str, calcAF(ctrl, minor_alt)))
+    counts = list()
+    # for each item in the dictionary of groups, run the usual calcAF and build a new list of them
+    for key, value in groups_dict.items():
+        counts.append(','.join(map(str, calcAF(groups_dict[key], minor_alt))))
     countsAll = ','.join(map(str,calcAF(main, minor_alt)[:4]))
     csq = reduceCSQ(line.INFO.get('CSQ', []))
     for consequence in csq:
-        print(f"{first},{countsStpd},{countsPwdg},{countsOodle},{countsCtl},{countsAll},{consequence}")
-  
-     
+        print(f"{first}," + str(",".join(counts)) + f",{countsAll},{consequence}")

@@ -1,31 +1,45 @@
 import re
 import pandas as pd
+# needed to list the lists we have from the list directory in a system-agnostic way
+import os
 
-configfile:"./config.yaml"
+# snakemake documentation implies that setting this casuses it to be the default config file, but it will be overriden if the user uses --configfile "" as an arg
+configfile:"./af_config.yaml"
 
-singularity: '/panfs/jay/groups/0/fried255/shared/gatk4_workflow/rescuer/AFREQ/CalcFix/afreq.sif'
+singularity: config["sif_path"]
 
 # MAKE THIS A PART OF THE AF CONTAINER - NO NEED TO REGEN EVERYTIME
 # read in the dog.regions.txt file as a table using pandas, and a regions variable that's a list of those chrom values
 chrmsDF = pd.read_table("dog.regions.txt")
 regions = list(chrmsDF['chrom'])
 
+# get the lists that exist in the provided list directory and check that they have a .list extension, make a list of their paths
+lists = os.listdir(config["lists_directory"])
+list_paths = list()
+
+# generate a header based on the group names we have already
+new_header = "chrm,pos,ref,alt,major,minor,maf.all,"
+for filename in lists:
+	if filename[-5:] == ".list":
+		group_name = str(filename.split('.')[0])
+		new_header = new_header + f"{group_name}.count.homref,{group_name}.count.het,{group_name}.count.homvar,{group_name}.count.nocall,{group_name}.maf,"
+		list_paths.append(config["lists_directory"] + "/" + filename)
+# finish off the new header
+new_header = new_header + "all.count.homref,all.count.het,all.count.homvar,all.count.nocall,Allele,Consequence,IMPACT,Gene,Feature_type,Feature,BIOTYPE,EXON,INTRON,cDNA_position,CDS_position,Protein_position,Amino_acids,Codons,DISTANCE,STRAND,VARIANT_CLASS,ENSP,SOURCE,SIFT_pred,SIFT_score,PhyloP_score"
+
+
+# for some reason, this needs to not be in the input section of the process_variants thing
+af_args = " ".join(list_paths)
+
 rule all:
     input:
-       # esoteric commented out block of code that I will never touch because I assume it has some utility
-       #expand(
-       #   #"results/{region}/{region}.split.vcf.gz",
-       #    "results/{region}/{region}.csv",
-       #    region=regions
-       #   #region='chr27.31108325-46662488'
-       #),
         "af_analysis.no_intergenic.csv"  
 
 # ADD MORE STRUCTURE TO DIRS LIKE split/{region}/{region}.vcf.gz
 # takes in a vcf file and outputs many processed vcf files using the options provided and bcftools
 rule select_variants_chrom:
     input:
-        vcf = "/panfs/jay/groups/0/fried255/fried255/working/pipeline/UU_Cfam_GSD_1.0_ROSY/20230809/joint_call.UU_Cfam_GSD_1.0_ROSY.20230809.vep.vcf.gz" 
+        vcf = config["vcf_path"]
     output:
         vcf = "results/{region}/{region}.split.vcf.gz"
     params:
@@ -44,15 +58,9 @@ rule select_variants_chrom:
                 {input.vcf}
         '''
 
-# change this to be general, and have both a variable amount of inputs and arguments in the shell command
 rule process_variants:
     input:
-        "Toy/Steve/Lists/stpd.list",
-        "Toy/Steve/Lists/pwdg.list",
-        "Toy/Steve/Lists/oodle.list",
-        "Toy/Steve/Lists/ctrlbrd.list",
         vcf = "results/{region}/{region}.split.vcf.gz"
-       #vcf = "chr27_snp.vcf"
     output:
         table = "results/{region}/{region}.csv"
     threads: 1
@@ -63,32 +71,16 @@ rule process_variants:
         '''
             ./af_analysis.mv.py \
                 {input.vcf} \
-                {input[0]} \
-                {input[1]} \
-                {input[2]} \
-                {input[3]} > {output.table}
+                {af_args} > {output.table}
         '''
 
-# takes a pre-set header string, and generates a new text file with it at the top, then concatenates the input to the end of that file (seems there are multiple inputs so it knows to do this repeatedly?)
-# change this header to be dynamic based on the above lists
 rule concat_files:
     input:
         expand("results/{region}/{region}.csv", region=regions)
     output:
         "af_analysis.csv" 
     params:
-       #header = "chrm,pos,ref,alt,major,minor,maf.all,aff.count.homref,aff.count.het,aff.count.homvar,aff.count.nocall,aff.maf,risk.count.homref,risk.count.het,risk.count.homvar,risk.count.nocall,risk.maf,ctl.count.homref,ctl.count.het,ctl.count.homvar,ctl.count.nocall,ctl.maf,all.count.homref,all.count.het,all.count.homvar,all.count.nocall,allele,consequence,impact,gene,transcript,biotype,exon,hgvsc,hgvsp,cdna_position,cds_position,protein_position,amino_acid,codons,variant_class,protein"
-        header = (
-            "chrm,pos,ref,alt,major,minor,maf.all,"
-            "stpd.count.homref,stpd.count.het,stpd.count.homvar,stpd.count.nocall,stpd.maf,"
-            "pwdg.count.homref,pwdg.count.het,pwdg.count.homvar,pwdg.count.nocall,pwdg.maf,"
-            "oodles.count.homref,oodles.count.het,oodles.count.homvar,oodles.count.nocall,oodles.maf,"
-            "ctrl.count.homref,ctrl.count.het,ctrl.count.homvar,ctrl.count.nocall,ctrl.maf,"
-            "all.count.homref,all.count.het,all.count.homvar,all.count.nocall,Allele,"
-            "Consequence,IMPACT,Gene,Feature_type,Feature,BIOTYPE,EXON,INTRON,cDNA_position,"
-            "CDS_position,Protein_position,Amino_acids,Codons,DISTANCE,STRAND,VARIANT_CLASS,"
-            "ENSP,SOURCE,SIFT_pred,SIFT_score,PhyloP_score"
-        )
+        header = str(new_header)
     threads: 1
     resources:
         time = 600,

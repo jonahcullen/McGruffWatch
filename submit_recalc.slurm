@@ -10,7 +10,6 @@
 #SBATCH -o slurm_logs/%j.calc_afreqs.out
 #SBATCH -e slurm_logs/%j.calc_afreqs.err
 #SBATCH -A fried255
-#SBATCH -p agsmall,aglarge,amdsmall,amdlarge
 
 set -e
 
@@ -23,7 +22,7 @@ snakemake -s freq_analysis.smk \
     --use-singularity \
     --singularity-args "-B $PWD,$VCF_DIR" \
     --profile slurm.afreq \
-    --configfile config.yaml \
+    --configfile af_config.yaml \
     --keep-going \
     --rerun-triggers mtime
 
