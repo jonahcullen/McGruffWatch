@@ -1,0 +1,19 @@
+# ignore Vim swap and backup files
+*.swp
+*.swo
+*.bak
+*.tmp
+*.~*
+
+# ignore Python compiled files
+__pycache__/
+*.py[cod]
+
+# ignore Snakemake lock files and logs
+.snakemake/
+*.log
+
+# ignore SLURM/LSF logs and job scripts
+*.out
+*.err
+
