@@ -1,0 +1,4 @@
+
+vepd_vcf: '/path/to/vcf.gz'
+image: '/path/to/afreq.sif'
+lists_dir: Toy/Steve/Lists

@@ -1,0 +1,4 @@
+
+pop_vcf: '/panfs/jay/groups/0/fried255/fried255/working/pipeline/UU_Cfam_GSD_1.0_ROSY/20241122/joint_call.UU_Cfam_GSD_1.0_ROSY.20241122.vep_exact.vcf.gz'
+image: '/users/9/cull0084/projects/misc/McGruffWatch/afreq.sif'
+lists_dir: Toy/Steve/Lists
