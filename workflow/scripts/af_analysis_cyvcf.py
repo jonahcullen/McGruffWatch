@@ -116,7 +116,7 @@ def main():
   vcf_samples = vcf_file.samples
   
   #get these main fields from csq 
-  des_to_get = ['Allele', 'Consequence', 'IMPACT', 'Gene', 'Feature', 'Feature_type', 'BIOTYPE', 'EXON', 'INTRON',
+  des_to_get = ['Allele', 'Consequence', 'IMPACT', 'Gene', 'Feature_type', 'Feature', 'BIOTYPE', 'EXON', 'INTRON',
                 'cDNA_position','CDS_position', 'Protein_position', 'Amino_acids', 'Codons', 'VARIANT_CLASS', 'ENSP']
     
   #get indices for CSQ descriptions
