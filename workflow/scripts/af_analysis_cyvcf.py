@@ -149,7 +149,7 @@ def main():
     var_geno = dict(zip(vcf_samples, record.genotypes))
     for sample, gt in var_geno.items():
       group_lists['all'].append(gt)
-      group_lists[samples.get(sample, "")].append(gt)
+      group_lists[samples.get(sample, "")].append(gt) if samples.get(sample) is not None else None
     groupAFs = {g: calcAF(gts, minor_alt) for g, gts in group_lists.items()}
     afs_str = ','.join([groupAFs[i] for i in sortedGroups])
     csq = reduceCSQ(record.INFO.get('CSQ', []), csq_indices)
