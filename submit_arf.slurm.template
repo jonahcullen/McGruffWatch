@@ -1,0 +1,41 @@
+#!/bin/bash -l
+#SBATCH -t 24:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2gb
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=EMAIL
+#SBATCH --job-name submit_arf.slurm
+#SBATCH -o %j.submit_arf.out
+#SBATCH -e %j.submit_arf.err
+#SBATCH -p PARTITIONS
+
+set -e
+
+cd $SLURM_SUBMIT_DIR
+
+# add your conda env with snakemake
+conda activate CONDAENV
+# which scheduler?
+PROFILE="$SLURM_SUBMIT_DIR/profile/slurm.arf"
+#PROFILE="$SLURM_SUBMIT_DIR/profile/lsf.arf"
+
+# absolute path to the af analysis config file
+CONFIG=/users/9/cull0084/projects/misc/McGruffWatch/config/config.MYTEST.yaml
+
+# these values are extracted from there (for now)
+POP_VCF=$(grep "^pop_vcf:" "$CONFIG" | sed -E 's/pop_vcf: *["'\''"]?([^"'\''"]*)["'\''"]?/\1/')
+LIST_DIR=$(grep "^list_dir:" "$CONFIG" | sed -E 's/list_dir: *["'\''"]?([^"'\''"]*)["'\''"]?/\1/')
+WORKDIR=$(grep "^workdir:" "$CONFIG" | sed -E 's/workdir: *["'\''"]?([^"'\''"]*)["'\''"]?/\1/')
+POP_VCF_DIR=$(dirname "$POP_VCF")
+
+mkdir -p "$WORKDIR"
+export APPTAINER_TMPDIR="$WORKDIR"
+
+snakemake \
+    --configfile "$CONFIG" \
+    --use-singularity \
+    --singularity-args "-B $PWD,$LIST_DIR,$POP_VCF_DIR" \
+    --profile "$PROFILE" \
+    --keep-going

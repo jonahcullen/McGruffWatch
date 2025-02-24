@@ -1,0 +1,12 @@
+{
+    "process_variants" :
+    {
+        "output" : ".logs/{rule}/region_{wildcards.region}/%j.{rule}.out",
+        "error"  : ".logs/{rule}/region_{wildcards.region}/%j.{rule}.err"
+    },
+    "concat_files" :
+    {
+        "output" : ".logs/{rule}/region_{wildcards.region}/%j.{rule}.out",
+        "error"  : ".logs/{rule}/region_{wildcards.region}/%j.{rule}.err"
+    }
+}

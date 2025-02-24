@@ -1,110 +1,64 @@
-import re
+
+from pathlib import Path
 import pandas as pd
 
-configfile: 'config/config.yaml'
-singularity: '/panfs/jay/groups/0/fried255/shared/gatk4_workflow/rescuer/AFREQ/CalcFix/afreq.sif'
+workdir: config['workdir']
 
-# MAKE THIS A PART OF THE AF CONTAINER - NO NEED TO REGEN EVERYTIME
-chrmsDF = pd.read_table('config/dog.regions.txt')
-regions = list(chrmsDF['chrom'])
+regions_path = Path(workflow.basedir).parent / "config" / "dog.regions.txt"
+regions = list(pd.read_table(regions_path, header=None)[0])
 
-list_files = sorted(Path(config['lists_dir']).glob('*.list'))
-if Path(config['lists_dir']) / 'ctrlbrd.list' in list_files:
-    list_files.remove(Path(config['lists_dir']) / 'ctrlbrd.list')
-    list_files.append(Path(config['lists_dir']) / 'ctrlbrd.list')
-
-print(list_files)
+#regions = "chr1.0-41185489"
 
 rule all:
     input:
-        expand(
-            'results/{region}/{region}.csv',
-            region=regions
-        )
-       #'results/combine/af_analysis.no_intergenic.csv'  
-
-# ADD MORE STRUCTURE TO DIRS LIKE split/{region}/{region}.vcf.gz
-rule select_variants_chrom:
-    input:
-        vcf = config['pop_vcf'] 
-    output:
-        vcf = 'results/{region}/{region}.split.vcf.gz'
-    params:
-        reg = lambda wildcards, output: re.sub(r'\.(?=[^.]*$)', ':', wildcards.region)
-    singularity: config['image']
-    threads: 4
-    resources:
-        time = 600,
-        mem_mb = 40000
-    shell:
-        '''
-            bcftools view \
-                -o {output.vcf} \
-                -r {params.reg} \
-                --threads {threads} \
-                -Oz \
-                {input.vcf}
-        '''
-
+       #expand("output/split/{region}.csv", region=regions)
+        "output/final/af_analysis.no_intergenic.csv" 
+       #"output/final/af_analysis.no_intergenic.csv"
+ 
 rule process_variants:
     input:
-       #'Toy/Steve/Lists/stpd.list',
-       #'Toy/Steve/Lists/pwdg.list',
-       #'Toy/Steve/Lists/oodle.list',
-       #'Toy/Steve/Lists/ctrlbrd.list',
-       #vcf = 'results/{region}/{region}.split.vcf.gz'
-        lists = list_files,
-        vcf = rules.select_variants_chrom.output.vcf
+        list_dir = config['list_dir'],
+        pop_vcf = config['pop_vcf']
     output:
-        table = 'results/{region}/{region}.csv'
+        table = "output/split/{region}.csv"
     params:
-        af_analysis = Path(workflow.basedir) / 'scripts' / 'af_analysis.py'
-    singularity: config['image']
+        calc_af = Path(workflow.basedir) / "scripts" / "af_analysis_cyvcf.py",
+    singularity: config['arf_image']
     threads: 1
     resources:
-        time = 1440,
+        time = 720,
         mem_mb = 20000
     shell:
         '''
-            {params.af_analysis} \
-                {input.vcf} \
-                {input.lists} > {output.table}
+            source activate cyvcf2_env
+
+            python {params.calc_af} \
+                -v {input.pop_vcf} \
+                -d {input.list_dir} \
+                -r {wildcards.region} \
+                > {output.table}
         '''
 
 rule concat_files:
     input:
-        expand('results/{region}/{region}.csv', region=regions)
+        expand("output/split/{region}.csv", region=regions)
     output:
-        'results/combine/af_analysis.csv' 
-    params:
-       #header = 'chrm,pos,ref,alt,major,minor,maf.all,aff.count.homref,aff.count.het,aff.count.homvar,aff.count.nocall,aff.maf,risk.count.homref,risk.count.het,risk.count.homvar,risk.count.nocall,risk.maf,ctl.count.homref,ctl.count.het,ctl.count.homvar,ctl.count.nocall,ctl.maf,all.count.homref,all.count.het,all.count.homvar,all.count.nocall,allele,consequence,impact,gene,transcript,biotype,exon,hgvsc,hgvsp,cdna_position,cds_position,protein_position,amino_acid,codons,variant_class,protein'
-        header = (
-            'chrm,pos,ref,alt,major,minor,maf.all,'
-            'stpd.count.homref,stpd.count.het,stpd.count.homvar,stpd.count.nocall,stpd.maf,'
-            'pwdg.count.homref,pwdg.count.het,pwdg.count.homvar,pwdg.count.nocall,pwdg.maf,'
-            'oodles.count.homref,oodles.count.het,oodles.count.homvar,oodles.count.nocall,oodles.maf,'
-            'ctrl.count.homref,ctrl.count.het,ctrl.count.homvar,ctrl.count.nocall,ctrl.maf,'
-            'all.count.homref,all.count.het,all.count.homvar,all.count.nocall,Allele,'
-            'Consequence,IMPACT,Gene,Feature_type,Feature,BIOTYPE,EXON,INTRON,cDNA_position,'
-            'CDS_position,Protein_position,Amino_acids,Codons,DISTANCE,STRAND,VARIANT_CLASS,'
-            'ENSP,SOURCE,SIFT_pred,SIFT_score,PhyloP_score'
-        )
+        "output/final/af_analysis.csv"  
     threads: 1
     resources:
-        time = 600,
+        time = 60,
         mem_mb = 20000
     shell:
         '''
-            echo {params.header} > {output}
-            cat {input} >> {output}
+            cat {input} |awk 'NR==1 || !/chrm/' > {output} 
         '''
 
 localrules: remove_intergenic
 rule remove_intergenic:
     input:
-        rules.concat_files.output[0]
+        "output/final/af_analysis.csv" 
     output:
-        'results/combine/af_analysis.no_intergenic.csv' 
+        "output/final/af_analysis.no_intergenic.csv" 
     shell:
         '''
             awk 'NR == 1 || !/intergenic/' {input} > {output}

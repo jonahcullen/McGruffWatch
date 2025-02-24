@@ -109,7 +109,7 @@ def main():
   
   vcf = args.vcf
   list_dir = args.dir
-  region = args.region
+  region = args.region.replace('.', ':')
   
   #rad vcf 
   vcf_file = VCF(vcf)
