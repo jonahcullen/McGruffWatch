@@ -1,0 +1,35 @@
+#!/bin/bash
+#BSUB -J submit_arf
+#BSUB -o %J.submit_arf.out
+#BSUB -e %J.submit_arf.error
+#BSUB -n 1
+#BSUB -R "span[hosts=1]rusage[mem=40240]"
+#BSUB -M 2048
+#BSUB -u EMAIL
+#BSUB -N
+
+set -e
+cd "$LSB_JOBPWD"
+
+# add your conda env with snakemake
+conda activate CONDAENV
+PROFILE="$SLURM_SUBMIT_DIR/profile/lsf.arf"
+
+# absolute path to the af analysis config file
+CONFIG=/users/9/cull0084/projects/misc/McGruffWatch/config/config.MYTEST.yaml
+
+# these values are extracted from there (for now)
+POP_VCF=$(grep "^pop_vcf:" "$CONFIG" | sed -E 's/pop_vcf: *["'\''"]?([^"'\''"]*)["'\''"]?/\1/')
+LIST_DIR=$(grep "^list_dir:" "$CONFIG" | sed -E 's/list_dir: *["'\''"]?([^"'\''"]*)["'\''"]?/\1/')
+WORKDIR=$(grep "^workdir:" "$CONFIG" | sed -E 's/workdir: *["'\''"]?([^"'\''"]*)["'\''"]?/\1/')
+POP_VCF_DIR=$(dirname "$POP_VCF")
+
+mkdir -p "$WORKDIR"
+export APPTAINER_TMPDIR="$WORKDIR"
+
+snakemake \
+    --configfile "$CONFIG" \
+    --use-singularity \
+    --singularity-args "-B $PWD,$LIST_DIR,$POP_VCF_DIR" \
+    --profile "$PROFILE" \
+    --keep-going
