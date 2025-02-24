@@ -3,7 +3,7 @@
 #BSUB -o %J.submit_arf.out
 #BSUB -e %J.submit_arf.error
 #BSUB -n 1
-#BSUB -R "span[hosts=1]rusage[mem=40240]"
+#BSUB -R "span[hosts=1]rusage[mem=2048]"
 #BSUB -M 2048
 #BSUB -u EMAIL
 #BSUB -N
