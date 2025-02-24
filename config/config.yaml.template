@@ -1,4 +1,4 @@
-
-vepd_vcf: '/path/to/vcf.gz'
-image: '/path/to/afreq.sif'
-lists_dir: Toy/Steve/Lists
+workdir: '/path/to/workdir'
+list_dir: '/path/to/dir/with/lists'
+pop_vcf: '/path/to/pop.vcf'
+arf_image: 'docker://docker.io/jonahcullen/arf:0.1'
