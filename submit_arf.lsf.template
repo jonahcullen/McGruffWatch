@@ -13,7 +13,7 @@ cd "$LSB_JOBPWD"
 
 # add your conda env with snakemake
 conda activate CONDAENV
-PROFILE="$SLURM_SUBMIT_DIR/profile/lsf.arf"
+PROFILE="$LSB_JOBPWD/profile/lsf.arf"
 
 # absolute path to the af analysis config file
 CONFIG=/users/9/cull0084/projects/misc/McGruffWatch/config/config.MYTEST.yaml
