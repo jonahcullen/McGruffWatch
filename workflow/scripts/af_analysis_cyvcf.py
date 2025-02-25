@@ -35,7 +35,10 @@ def calcAF(genos, minor_alt):
   hom_var = 0
   missing = 0
   for i in genos:
-    first, second, phased = i
+    if len(i) == 3:
+      first, second, phased = i
+    else:
+      first = second = i[0]
     if first != -1 and second != -1:
       alleles.append(first)
       alleles.append(second)
