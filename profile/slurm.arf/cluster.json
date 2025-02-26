@@ -6,7 +6,7 @@
     },
     "concat_files" :
     {
-        "output" : ".logs/{rule}/region_{wildcards.region}/%j.{rule}.out",
-        "error"  : ".logs/{rule}/region_{wildcards.region}/%j.{rule}.err"
+        "output" : ".logs/{rule}/%j.{rule}.out",
+        "error"  : ".logs/{rule}/%j.{rule}.err"
     }
 }
