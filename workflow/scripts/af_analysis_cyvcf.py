@@ -120,7 +120,8 @@ def main():
   
   #get these main fields from csq 
   des_to_get = ['Allele', 'Consequence', 'IMPACT', 'Gene', 'Feature_type', 'Feature', 'BIOTYPE', 'EXON', 'INTRON',
-                'cDNA_position','CDS_position', 'Protein_position', 'Amino_acids', 'Codons', 'VARIANT_CLASS', 'ENSP']
+                'cDNA_position','CDS_position', 'Protein_position', 'Amino_acids', 'Codons', 'VARIANT_CLASS', 'ENSP',
+                'PhyloP_score']
     
   #get indices for CSQ descriptions
   csq_indices = extract_csq_indices(vcf_file, des_to_get)
